@@ -7,6 +7,8 @@ bombjack-pc/server.pid
 # ---- 构建产物与构建工具（通过 GitHub Releases 分发）----
 *.fpk
 /fnpack.exe
+.release/
+.gh_token
 
 # ---- 本地运维脚本（含内网地址/凭据，切勿入库）----
 /ssh_run.py
