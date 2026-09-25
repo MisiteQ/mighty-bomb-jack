@@ -1,0 +1,17 @@
+# 统一行尾：fnOS 上的 bash 脚本必须为 LF
+* text=auto
+
+# Linux shell 脚本（无扩展名）与 CGI 入口
+bombjackgame/cmd/** text eol=lf
+*.cgi text eol=lf
+
+# Windows 批处理保持 CRLF
+*.bat text eol=crlf
+
+# 二进制资源
+*.png binary
+*.jpg binary
+*.ico binary
+*.nes binary
+*.wasm binary
+*.fpk binary

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>炸弹杰克 · Mighty Bomb Jack</title>
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #101018;
+    color: #e8e8f0;
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header {
+    width: 100%;
+    max-width: 960px;
+    padding: 14px 20px 8px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: 1px; }
+  header h1 span { color: #f0a030; }
+  header .sub { font-size: 12px; color: #8888a0; }
+  #stage {
+    position: relative;
+    background: #000;
+    border: 1px solid #2a2a3a;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 8px 40px rgba(0,0,0,.6);
+  }
+  #canvas {
+    display: block;
+    width: 800px;
+    height: 600px;
+    max-width: 96vw;
+    image-rendering: pixelated;
+    background: #000;
+    outline: none;
+  }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    align-items: center;
+    justify-content: center;
+    background: rgba(8,8,14,.88);
+    cursor: pointer;
+    text-align: center;
+  }
+  #overlay.hidden { display: none; }
+  #overlay .big { font-size: 22px; color: #f0a030; letter-spacing: 2px; }
+  #overlay .small { font-size: 13px; color: #9a9ab2; line-height: 1.9; }
+  #status {
+    width: 100%;
+    max-width: 960px;
+    padding: 8px 20px;
+    font-size: 12px;
+    color: #6a6a82;
+    min-height: 18px;
+  }
+  #toolbar {
+    width: 100%;
+    max-width: 960px;
+    padding: 4px 20px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  #toolbar button {
+    background: #1c1c2c;
+    color: #d8d8ea;
+    border: 1px solid #34344c;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #toolbar button:hover { background: #26263c; border-color: #4a4a68; }
+  #toolbar .tip { font-size: 12px; color: #6a6a82; }
+  #about {
+    width: 100%;
+    max-width: 960px;
+    padding: 0 20px 16px;
+    font-size: 12px;
+    color: #55556e;
+    text-align: center;
+  }
+  #about a { color: #7a7aa0; text-decoration: none; }
+  #about a:hover { color: #f0a030; }
+
+  /* 全屏：画布居中并保持 4:3 最大化 */
+  #stage:fullscreen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 0;
+  }
+  #stage:-webkit-full-screen {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 0;
+  }
+  #stage:fullscreen #canvas {
+    width: auto;
+    height: 100vh;
+    max-width: 100vw;
+    aspect-ratio: 4 / 3;
+  }
+  #stage:-webkit-full-screen #canvas {
+    width: auto;
+    height: 100vh;
+    max-width: 100vw;
+    aspect-ratio: 4 / 3;
+  }
+
+  #volBox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #1c1c2c;
+    border: 1px solid #34344c;
+    border-radius: 6px;
+    padding: 4px 12px;
+  }
+  #volBox label { font-size: 13px; color: #d8d8ea; }
+  #volBox input[type="range"] { width: 110px; accent-color: #f0a030; }
+  #volBox span { font-size: 12px; color: #9a9ab2; width: 38px; text-align: right; }
+
+  /* ---- 弹出面板（存档管理 / 按键设置，各自独立） ---- */
+  .panel {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(5,5,10,.7);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .panel.hidden { display: none; }
+  .panelBox {
+    width: 520px; max-width: 92vw; max-height: 86vh; overflow-y: auto;
+    background: #16161f; border: 1px solid #34344c; border-radius: 10px;
+    padding: 18px 20px 16px;
+    box-shadow: 0 12px 60px rgba(0,0,0,.7);
+  }
+  .panelBox h2 { font-size: 15px; color: #f0a030; margin: 0 0 4px; letter-spacing: 1px; display: flex; justify-content: space-between; align-items: center; }
+  .panelBox h3 { font-size: 13px; color: #9a9ab2; margin: 14px 0 8px; font-weight: normal; }
+  .panelClose { background: none; border: none; color: #8888a0; font-size: 20px; cursor: pointer; line-height: 1; }
+  .panelClose:hover { color: #fff; }
+  .slotRow, .keyRow {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border: 1px solid #26263a; border-radius: 6px;
+    margin-bottom: 6px; background: #1c1c2a; font-size: 13px;
+  }
+  .slotRow .info { flex: 1; color: #d8d8ea; }
+  .slotRow .info .empty { color: #666680; }
+  .keyRow .label { width: 90px; color: #d8d8ea; }
+  .keyRow .cur { flex: 1; color: #f0a030; }
+  .keyRow .cur.waiting { color: #7ad0ff; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: .35; } }
+  .panelBox button.act {
+    background: #26263c; color: #d8d8ea; border: 1px solid #3a3a54;
+    border-radius: 5px; padding: 4px 10px; font-size: 12px; cursor: pointer;
+  }
+  .panelBox button.act:hover { background: #34344e; }
+  .panelBox button.act.danger { color: #ff8080; }
+  .panelTip { font-size: 11px; color: #666680; margin-top: 10px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<header>
+  <h1>炸弹杰克 <span>Mighty Bomb Jack</span></h1>
+  <div class="sub">TECMO 1986 · FC · 离线版</div>
+</header>
+
+<div id="stage">
+  <canvas id="canvas" width="800" height="600" tabindex="0"></canvas>
+  <div id="overlay">
+    <div class="big" id="ovTitle">点击开始游戏</div>
+    <div class="small" id="ovText">
+      方向键 = 移动 · X = 跳跃(A) · Z = 攻击(B)<br>
+      Enter = 开始/暂停 · Shift = 选择 · F8 = 截图<br>
+      加载中请稍候…
+    </div>
+  </div>
+</div>
+
+<div id="status">初始化…</div>
+
+<div id="toolbar">
+  <button id="btnSlots">存档管理</button>
+  <button id="btnKeys">按键设置</button>
+  <button id="btnPause">暂停</button>
+  <button id="btnShot">截图</button>
+  <button id="btnReset">重置</button>
+  <button id="btnExit">退出</button>
+  <button id="btnFs">全屏</button>
+  <div id="volBox">
+    <label>音量</label>
+    <input type="range" id="volSlider" min="0" max="100" value="100">
+    <span id="volPct">100%</span>
+  </div>
+  <div class="tip">F8 = 截图 · F10 = 重置 · 存档在本地 saves/ 目录</div>
+</div>
+
+<footer id="about">游戏开发者：TECMO 1986 · 发布者：<a href="https://github.com/MisiteQ" target="_blank" rel="noopener">Misite齊（GitHub）</a></footer>
+
+<div id="panelSlots" class="panel hidden">
+  <div class="panelBox">
+    <h2>存档管理 <button class="panelClose" title="关闭">×</button></h2>
+    <h3>存档槽位（保存在本地磁盘 saves/ 目录）</h3>
+    <div id="slotList">加载中…</div>
+    <div class="panelTip">存档会写入磁盘上的 saves/ 目录，重启浏览器后仍可读取。</div>
+  </div>
+</div>
+
+<div id="panelKeys" class="panel hidden">
+  <div class="panelBox">
+    <h2>按键设置 <button class="panelClose" title="关闭">×</button></h2>
+    <div id="keyList"></div>
+    <div class="panelTip">点「改键」后按下新按键即可（Esc 取消）；设置自动保存到磁盘，重启后仍生效。<br>
+    方向键/WASD 等未绑定的按键会按默认行为传给模拟器。</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var overlay = document.getElementById('overlay');
+  var ovTitle = document.getElementById('ovTitle');
+  var ovText = document.getElementById('ovText');
+  function setStatus(t) { statusEl.textContent = t; console.log('[boot]', t); }
+
+  var ROM_PATH = '/home/web_user/retroarch/userdata/downloads/game.nes';
+  var ROM_ARG = '-v ' + ROM_PATH;
+  // 核心配置：禁用与游戏冲突的热键（空格=按住快进、Esc=退出模拟器等），
+  // 并把"重置"热键绑定到 F10 供重置按钮使用。
+  // 注意：网页版核心固定从 userdata/retroarch.cfg 读取配置，-c 参数无效
+  var CFG_PATH = '/home/web_user/retroarch/userdata/retroarch.cfg';
+  var CFG_TEXT = [
+    'input_toggle_fast_forward = "nul"',
+    'input_hold_fast_forward = "nul"',
+    'input_toggle_slowmotion = "nul"',
+    'input_hold_slowmotion = "nul"',
+    'input_exit_emulator = "nul"',
+    'input_menu_toggle = "nul"',
+    'input_reset = "f10"',
+    'input_screenshot = "nul"',
+    ''
+  ].join('\n');
+
+  // 收集 AudioContext 以便用户手势后恢复
+  window.__ctxs = [];
+  var OrigAC = window.AudioContext || window.webkitAudioContext;
+  if (OrigAC) {
+    window.AudioContext = function () {
+      var ctx = new OrigAC();
+      window.__ctxs.push(ctx);
+      return ctx;
+    };
+    window.AudioContext.prototype = OrigAC.prototype;
+  }
+
+  // dbObject shim：核心用它缓存 wasm 二进制；这里不做缓存，每次直接 fetch
+window.dbObject = {
+  select: function (key, cb) { if (cb) cb(null); },
+  put: function (val, key) { /* no-op */ }
+};
+
+window.Module = {
+    noInitialRun: true,
+    canvas: document.getElementById('canvas'),
+    locateFile: function (p) { return p; },
+    preRun: [],
+    onRuntimeInitialized: function () {
+      setStatus('核心就绪，正在读取 ROM…');
+      try {
+        FS.mkdirTree('/home/web_user/retroarch/userdata/downloads');
+        FS.mkdirTree('/home/web_user/retroarch/states');
+        FS.mkdirTree('/home/web_user/retroarch/userdata/saves');
+        FS.mkdirTree('/home/web_user/retroarch/userdata/config');
+        FS.writeFile(CFG_PATH, CFG_TEXT);
+      } catch (e) { console.warn('[boot] mkdir:', e); }
+      fetch('game.nes')
+        .then(function (r) { return r.arrayBuffer(); })
+        .then(function (buf) {
+          var data = new Uint8Array(buf);
+          FS.writeFile(ROM_PATH, data);
+          window.__romReady = true;
+          // 检查磁盘上是否有历史存档（统计所有槽位）
+          fetch('/__list')
+            .then(function (r) { return r.json(); })
+            .then(function (items) {
+              var n = items.filter(function (it) { return /\.state$/.test(it.name); }).length;
+              if (n > 0) setStatus('ROM 就绪，检测到 ' + n + ' 个本地存档 —— 点击开始后打开「存档管理」即可读取');
+              else setStatus('ROM 就绪 (' + data.length + ' 字节)，按提示点击开始');
+            })
+            .catch(function () {
+              setStatus('ROM 就绪 (' + data.length + ' 字节)，按提示点击开始');
+            });
+        })
+        .catch(function (e) {
+          setStatus('ROM 读取失败: ' + e.message);
+        });
+    },
+    print: function (t) { console.log('[emu]', t); },
+    printErr: function (t) {
+      console.warn('[emu]', t);
+      // 记录取档结果，供读档按钮校验
+      if (/Failed to load state/i.test(t)) window.__loadResult = false;
+    }
+  };
+
+  function resumeAudio() {
+    window.__ctxs.forEach(function (c) {
+      if (c.state === 'suspended') { c.resume().catch(function(){}); }
+    });
+  }
+
+  // 核心只接受 isTrusted=false 的合成键盘事件（虚拟手柄层的设计），
+  // 这里把真实按键转发为合成事件；若该键被用户重新绑定，则转发为绑定的虚拟键
+  // 动作定义：vk = 模拟器实际收到的虚拟键（RetroArch 默认布局）
+  var ACTIONS = [
+    { id: 'up',     label: '上',        vk: { key: 'ArrowUp',    code: 'ArrowUp',    keyCode: 38 } },
+    { id: 'down',   label: '下',        vk: { key: 'ArrowDown',  code: 'ArrowDown',  keyCode: 40 } },
+    { id: 'left',   label: '左',        vk: { key: 'ArrowLeft',  code: 'ArrowLeft',  keyCode: 37 } },
+    { id: 'right',  label: '右',        vk: { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39 } },
+    { id: 'a',      label: 'A (跳跃)',  vk: { key: 'x',          code: 'KeyX',       keyCode: 88 } },
+    { id: 'b',      label: 'B (攻击)',  vk: { key: 'z',          code: 'KeyZ',       keyCode: 90 } },
+    { id: 'start',  label: 'Start',     vk: { key: 'Enter',      code: 'Enter',      keyCode: 13 } },
+    { id: 'select', label: 'Select',    vk: { key: 'Backspace',  code: 'Backspace',  keyCode: 8 } }
+  ];
+  // keymap[动作id] = { key, code, keyCode } 用户按下的物理键
+  var keymap = {};
+  ACTIONS.forEach(function (a) { keymap[a.id] = { key: a.vk.key, code: a.vk.code, keyCode: a.vk.keyCode }; });
+  var captureTarget = null; // 正在改键的动作 id
+
+  function loadKeymap() {
+    // 磁盘优先，localStorage 作离线兜底
+    fetch('saves/keys.json', { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (m) { if (m && typeof m === 'object') { keymap = m; if (typeof renderKeyList === 'function') renderKeyList(); } })
+      .catch(function () {
+        try {
+          var m = JSON.parse(localStorage.getItem('bj_keymap') || 'null');
+          if (m) keymap = m;
+        } catch (e) {}
+      });
+  }
+  function saveKeymap() {
+    try { localStorage.setItem('bj_keymap', JSON.stringify(keymap)); } catch (e) {}
+    var blob = JSON.stringify(keymap);
+    fetch('/__save?name=keys.json', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: blob })
+      .catch(function () {});
+  }
+  loadKeymap();
+
+  function forwardKey(type, e) {
+    var vk = null;
+    for (var i = 0; i < ACTIONS.length; i++) {
+      var m = keymap[ACTIONS[i].id];
+      if (m && m.key === e.key && m.code === e.code) { vk = ACTIONS[i].vk; break; }
+    }
+    var key = vk ? vk.key : e.key;
+    var code = vk ? vk.code : e.code;
+    var kc = vk ? vk.keyCode : e.keyCode;
+    var ev = new KeyboardEvent(type, {
+      key: key, code: code, location: e.location,
+      ctrlKey: e.ctrlKey, shiftKey: e.shiftKey, altKey: e.altKey, metaKey: e.metaKey,
+      repeat: e.repeat, bubbles: true, cancelable: true
+    });
+    Object.defineProperty(ev, 'keyCode', { get: function () { return kc; } });
+    Object.defineProperty(ev, 'which', { get: function () { return kc; } });
+    Object.defineProperty(ev, 'charCode', { get: function () { return vk ? 0 : e.charCode; } });
+    (document.getElementById('canvas') || window).dispatchEvent(ev);
+    if (ev.defaultPrevented) e.preventDefault();
+  }
+  var swallowUp = null; // 改键捕获后，吞掉同一物理键的 keyup
+  // 本地功能键，不转发给模拟器（Esc 会触发核心的退出/菜单热键导致画面卡死）
+  var LOCAL_KEYS = { Escape: 1, F8: 1, F10: 1 };
+  window.addEventListener('keydown', function (e) {
+    if (!e.isTrusted) return;
+    if (captureTarget) {
+      // 改键模式：捕获这个按键，不转发给模拟器
+      e.preventDefault();
+      if (e.key !== 'Escape') {
+        keymap[captureTarget] = { key: e.key, code: e.code, keyCode: e.keyCode };
+        saveKeymap();
+        swallowUp = { key: e.key, code: e.code, until: Date.now() + 600 };
+      }
+      captureTarget = null;
+      if (typeof renderKeyList === 'function') renderKeyList();
+      return;
+    }
+    if (LOCAL_KEYS[e.key]) { e.preventDefault(); return; }
+    forwardKey('keydown', e);
+  }, true);
+  window.addEventListener('keyup', function (e) {
+    if (!e.isTrusted) return;
+    if (swallowUp && Date.now() < swallowUp.until && e.key === swallowUp.key && e.code === swallowUp.code) {
+      swallowUp = null;
+      return;
+    }
+    if (LOCAL_KEYS[e.key]) { e.preventDefault(); return; }
+    forwardKey('keyup', e);
+  }, true);
+  // Esc = 关闭已打开的弹窗（不传给模拟器，避免画面卡死）
+  window.addEventListener('keydown', function (e) {
+    if (e.isTrusted && e.key === 'Escape') {
+      var a = document.getElementById('panelSlots'), b = document.getElementById('panelKeys');
+      if ((a && !a.classList.contains('hidden')) || (b && !b.classList.contains('hidden'))) closePanel();
+    }
+  }, true);
+
+  var started = false;
+  overlay.addEventListener('click', function () {
+    if (!window.__romReady) { setStatus('ROM 还没就绪，稍候再点'); return; }
+    if (started) { resumeAudio(); overlay.classList.add('hidden'); return; }
+    started = true;
+    resumeAudio();
+    overlay.classList.add('hidden');
+    setStatus('游戏运行中');
+    document.getElementById('canvas').focus();
+    try {
+      Module.callMain(ROM_ARG.split(' '));
+    } catch (e) {
+      setStatus('启动失败: ' + (e.message || e));
+      overlay.classList.remove('hidden');
+    }
+  });
+
+  // ---- 工具栏 ----
+  // 存档持久化：通过本地服务器写入磁盘 standalone/saves/ 目录，
+  // 刷新页面、重启浏览器都不会丢失
+  function postSave(name, data) {
+    return fetch('/__save?name=' + encodeURIComponent(name), { method: 'POST', body: data });
+  }
+  var statesDir = function () { return '/home/web_user/retroarch/userdata/states'; };
+  // RetroArch 按 content 文件名命名 state：game.nes -> game.state。
+  // 读档必须写到这个确切路径，否则核心会报 "Failed to load state"
+  function statePath() {
+    var base = ROM_PATH.substring(ROM_PATH.lastIndexOf('/') + 1).replace(/\.[^.]+$/, '');
+    return statesDir() + '/' + base + '.state';
+  }
+  function findState() {
+    try {
+      var names = FS.readdir(statesDir()).filter(function (n) { return /\.state$/.test(n); });
+      return names.length ? statesDir() + '/' + names[names.length - 1] : null;
+    } catch (e) { return null; }
+  }
+  // ---- 存档槽位：参考原站的多槽位设计，每槽一个真实磁盘文件 slot<N>.state ----
+  var NUM_SLOTS = 6;
+  function slotName(i) { return 'slot' + i + '.state'; }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  // 把核心刚生成的 state 存入指定槽位
+  function saveToSlot(slot, cb) {
+    try {
+      Module._cmd_save_state();
+      var tries = 0;
+      var poll = setInterval(function () {
+        var p = findState();
+        tries++;
+        if (p) {
+          clearInterval(poll);
+          try {
+            var data = FS.readFile(p, { encoding: 'binary' });
+            postSave(slotName(slot), data)
+              .then(function (r) {
+                if (r.ok) setStatus('已存入槽位 ' + slot + ' (saves/' + slotName(slot) + ', ' + data.length + ' 字节)');
+                else setStatus('存档已生成，但写入磁盘失败 (HTTP ' + r.status + ')');
+                if (cb) cb(r.ok);
+              })
+              .catch(function (e) {
+                setStatus('存档已生成，但写入磁盘失败: ' + (e.message || e));
+                if (cb) cb(false);
+              });
+          } catch (e) { setStatus('存档出错: ' + (e.message || e)); if (cb) cb(false); }
+        } else if (tries > 20) {
+          clearInterval(poll);
+          setStatus('存档失败：核心未生成 state 文件');
+          if (cb) cb(false);
+        }
+      }, 100);
+    } catch (e) { setStatus('存档出错: ' + (e.message || e)); if (cb) cb(false); }
+  }
+  // 从指定槽位读取（复用 applyState，含暂停态特殊处理）
+  function loadFromSlot(slot) {
+    fetch('saves/' + slotName(slot), { cache: 'no-store' })
+      .then(function (r) {
+        if (!r.ok) throw new Error('此槽位没有存档');
+        return r.arrayBuffer();
+      })
+      .then(function (buf) {
+        applyState(new Uint8Array(buf));
+      })
+      .catch(function (e) { setStatus('读档失败: ' + (e.message || e)); });
+  }
+  function renderSlots() {
+    var box = document.getElementById('slotList');
+    fetch('/__list', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (items) {
+        var byName = {};
+        items.forEach(function (it) { byName[it.name] = it; });
+        var html = '';
+        for (var i = 1; i <= NUM_SLOTS; i++) {
+          var it = byName[slotName(i)];
+          var info = it
+            ? esc(it.mtime) + ' · ' + (it.size > 1024 ? (it.size / 1024).toFixed(1) + ' KB' : it.size + ' B')
+            : '<span class="empty">空槽位</span>';
+          html += '<div class="slotRow"><span class="info"><b>槽位 ' + i + '</b>　' + info + '</span>' +
+            '<button class="act" data-op="save" data-slot="' + i + '">' + (it ? '覆盖' : '存入') + '</button>' +
+            (it ? '<button class="act" data-op="load" data-slot="' + i + '">读取</button>' +
+                 '<button class="act danger" data-op="del" data-slot="' + i + '">删除</button>' : '') +
+            '</div>';
+        }
+        box.innerHTML = html;
+      })
+      .catch(function () { box.innerHTML = '<div class="slotRow"><span class="info empty">无法读取存档目录（本地服务器未运行？）</span></div>'; });
+  }
+  document.getElementById('slotList').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button.act');
+    if (!btn) return;
+    var slot = +btn.getAttribute('data-slot');
+    var op = btn.getAttribute('data-op');
+    if (op === 'save') {
+      if (!started) { setStatus('先点击开始游戏再存档'); return; }
+      btn.disabled = true; btn.textContent = '…';
+      saveToSlot(slot, function () { renderSlots(); });
+    } else if (op === 'load') {
+      if (!started) { setStatus('先点击开始游戏再读档'); return; }
+      loadFromSlot(slot);
+      closePanel();
+    } else if (op === 'del') {
+      fetch('/__delete?name=' + encodeURIComponent(slotName(slot)))
+        .then(function () { renderSlots(); setStatus('已删除槽位 ' + slot); });
+    }
+  });
+
+  // ---- 按键设置 ----
+  function keyLabel(m) {
+    if (!m) return '未设置';
+    var names = { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Enter: 'Enter', Backspace: 'Backspace', ' ': '空格' };
+    return names[m.key] || (m.key.length === 1 ? m.key.toUpperCase() : m.key);
+  }
+  function renderKeyList() {
+    var box = document.getElementById('keyList');
+    var html = '';
+    ACTIONS.forEach(function (a) {
+      var waiting = captureTarget === a.id;
+      html += '<div class="keyRow"><span class="label">' + a.label + '</span>' +
+        '<span class="cur' + (waiting ? ' waiting' : '') + '">' + (waiting ? '按下新按键… (Esc 取消)' : keyLabel(keymap[a.id])) + '</span>' +
+        '<button class="act" data-id="' + a.id + '">' + (waiting ? '等待中' : '改键') + '</button></div>';
+    });
+    box.innerHTML = html;
+  }
+  document.getElementById('keyList').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button.act');
+    if (!btn) return;
+    captureTarget = btn.getAttribute('data-id');
+    renderKeyList();
+  });
+
+  // ---- 面板开关（存档 / 按键设置各自独立弹出） ----
+  var panelSlots = document.getElementById('panelSlots');
+  var panelKeys = document.getElementById('panelKeys');
+  function openSlots() { renderSlots(); renderKeyList(); panelSlots.classList.remove('hidden'); panelKeys.classList.add('hidden'); }
+  function openKeys() { renderKeyList(); panelKeys.classList.remove('hidden'); panelSlots.classList.add('hidden'); }
+  function closePanel() { panelSlots.classList.add('hidden'); panelKeys.classList.add('hidden'); captureTarget = null; }
+  document.getElementById('btnSlots').onclick = openSlots;
+  document.getElementById('btnKeys').onclick = openKeys;
+  Array.prototype.forEach.call(document.querySelectorAll('.panelClose'), function (btn) { btn.onclick = closePanel; });
+  panelSlots.addEventListener('click', function (e) { if (e.target === panelSlots) closePanel(); });
+  panelKeys.addEventListener('click', function (e) { if (e.target === panelKeys) closePanel(); });
+
+  function applyState(data) {
+    // 关键 1：写到核心期望的确切文件名（game.state），而不是任意名字
+    FS.writeFile(statePath(), data);
+    window.__loadResult = true;
+    Module._cmd_load_state();
+    // 关键 2：核心把读档推迟到下一帧执行，暂停时主循环停摆、读档永远不生效。
+    // 若当前暂停中，先恢复运行一瞬让核心应用状态，再重新暂停
+    if (paused) {
+      setTimeout(function () {
+        tapKey('p', 'KeyP', 80); // 继续
+        setTimeout(function () {
+          tapKey('p', 'KeyP', 80); // 再暂停
+          setTimeout(reportLoad, 500);
+        }, 500);
+      }, 250);
+    } else {
+      setTimeout(reportLoad, 400);
+    }
+  }
+  function reportLoad() {
+    if (window.__loadResult === false) setStatus('读档失败：state 与当前核心不兼容');
+    else setStatus('已读档 (槽位)');
+  }
+  // 重置：核心配置已把 input_reset 绑定为 F10，这里发送合成的 F10 热键
+  function doReset() {
+    if (!started) { setStatus('先点击开始游戏'); return; }
+    tapKey('F10', 'F10', 121, 80);
+    setStatus('已重置');
+  }
+  document.getElementById('btnReset').onclick = doReset;
+  // 退出：自动存档到空槽位（无空槽则覆盖最早的），然后暂停并显示退出画面
+  function pickExitSlot(items) {
+    var byName = {};
+    items.forEach(function (it) { byName[it.name] = it; });
+    for (var i = 1; i <= NUM_SLOTS; i++) {
+      if (!byName[slotName(i)]) return i; // 优先空槽位
+    }
+    // 没有空槽位：覆盖修改时间最早的
+    var oldest = -1, oldestTs = Infinity;
+    for (var j = 1; j <= NUM_SLOTS; j++) {
+      var it = byName[slotName(j)];
+      var ts = it && typeof it.ts === 'number' ? it.ts : (it ? Date.parse(it.mtime) : Infinity);
+      if (ts < oldestTs) { oldestTs = ts; oldest = j; }
+    }
+    return oldest;
+  }
+  // 尽力关闭宿主窗口：
+  // 1) window.close()：对脚本打开的标签页有效
+  // 2) 飞牛桌面 iframe：游戏页与桌面同源，从本 iframe 向上找到所在应用窗口的关闭按钮并替用户点击
+  // 3) 都失败则保持退出遮罩，提示用户手动点窗口的 ×
+  function closeHostWindow() {
+    try { window.close(); } catch (e) {}
+    setTimeout(function () {
+      try {
+        if (window.parent && window.parent !== window && window.frameElement) {
+          var el = window.frameElement;
+          for (var i = 0; i < 10 && el; i++) {
+            el = el.parentElement;
+            if (!el || el === window.parent.document.body) break;
+            var btn = el.querySelector('[aria-label="close"], [class*="close-btn"], [class*="-close"]');
+            if (btn) { btn.click(); return; }
+          }
+        }
+      } catch (e) {}
+    }, 600);
+  }
+  document.getElementById('btnExit').onclick = function () {
+    if (!started) { closeHostWindow(); setStatus('游戏未运行，正在关闭窗口'); return; }
+    setStatus('正在退出并保存存档…');
+    fetch('/__list', { cache: 'no-store' })
+      .then(function (r) { return r.json(); })
+      .then(function (items) {
+        var slot = pickExitSlot(items || []);
+        if (!slot) throw new Error('没有可用槽位');
+        // 存档前先暂停，保证存到静止画面
+        if (!paused) { tapKey('p', 'KeyP', 80); paused = true; }
+        document.getElementById('btnPause').textContent = '继续';
+        saveToSlot(slot, function (ok) {
+          ovTitle.textContent = '游戏已退出';
+          ovText.innerHTML = (ok ? '已自动存档到槽位 ' + slot + '<br>' : '自动存档失败<br>') +
+            '正在关闭窗口…（若未关闭，请点击窗口右上角的 ×）';
+          overlay.classList.remove('hidden');
+          setStatus('已退出' + (ok ? '（存档：槽位 ' + slot + '）' : '（存档未成功）'));
+          setTimeout(closeHostWindow, 1500);
+        });
+      })
+      .catch(function (e) {
+        setStatus('退出失败: ' + (e.message || e));
+      });
+  };
+  document.getElementById('btnFs').onclick = function () {
+    var el = document.getElementById('stage');
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
+
+  // ---- 暂停：发送 RetroArch 暂停热键 P（合成事件）----
+  function tapKey(key, code, keyCode, gap) {
+    var mk = function (type) {
+      var ev = new KeyboardEvent(type, { key: key, code: code, bubbles: true, cancelable: true });
+      Object.defineProperty(ev, 'keyCode', { get: function () { return keyCode; } });
+      Object.defineProperty(ev, 'which', { get: function () { return keyCode; } });
+      (document.getElementById('canvas') || window).dispatchEvent(ev);
+    };
+    mk('keydown');
+    setTimeout(mk.bind(null, 'keyup'), gap || 80);
+  }
+  var paused = false;
+  document.getElementById('btnPause').onclick = function () {
+    if (!started) { setStatus('先点击开始游戏'); return; }
+    tapKey('p', 'KeyP', 80);
+    paused = !paused;
+    this.textContent = paused ? '继续' : '暂停';
+    setStatus(paused ? '已暂停' : '继续游戏');
+  };
+
+  // ---- 音量：RetroArch 音量单位是 dB（0dB=正常），滑条按响度映射 ----
+  var volSlider = document.getElementById('volSlider');
+  var volPct = document.getElementById('volPct');
+  volSlider.addEventListener('input', function () {
+    var pct = +volSlider.value;
+    volPct.textContent = pct + '%';
+    var db = pct > 0 ? Math.max(-80, 20 * Math.log10(pct / 100)) : -80;
+    if (typeof Module !== 'undefined' && Module._audio_set_volume) {
+      try { Module._audio_set_volume(db); } catch (e) {}
+    }
+  });
+
+  // ---- 截图：核心自带的截图功能 → 下载 + 写入本地磁盘 ----
+  function shotsDir() { return '/home/web_user/retroarch/userdata/screenshots'; }
+  function doScreenshot() {
+    if (!started) { setStatus('先点击开始游戏再截图'); return; }
+    try {
+      Module._cmd_take_screenshot();
+      setTimeout(function () {
+        var data = null;
+        try {
+          var names = FS.readdir(shotsDir()).filter(function (n) { return /\.png$/i.test(n); });
+          if (names.length) {
+            data = FS.readFile(shotsDir() + '/' + names[names.length - 1], { encoding: 'binary' });
+          }
+        } catch (e) {}
+        if (!data) { setStatus('截图失败'); return; }
+        var fname = 'bombjack-' + new Date().toISOString().replace(/[:.]/g, '-') + '.png';
+        var blob = new Blob([data], { type: 'image/png' });
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = fname;
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 3000);
+        postSave(fname, data)
+          .then(function (r) {
+            setStatus(r.ok ? '已截图（已下载，并保存到 saves/screenshots/）' : '已下载截图，写入磁盘失败 (HTTP ' + r.status + ')');
+          })
+          .catch(function () { setStatus('已下载截图，写入磁盘失败'); });
+      }, 600);
+    } catch (e) { setStatus('截图出错: ' + (e.message || e)); }
+  }
+  document.getElementById('btnShot').onclick = doScreenshot;
+  // 快捷键 F8 = 截图、F10 = 重置（全屏时也能用）
+  window.addEventListener('keydown', function (e) {
+    if (e.isTrusted && e.key === 'F8') {
+      e.preventDefault();
+      e.stopPropagation();
+      doScreenshot();
+    } else if (e.isTrusted && e.key === 'F10') {
+      e.preventDefault();
+      e.stopPropagation();
+      doReset();
+    }
+  }, true);
+})();
+</script>
+<script src="nescore.js"></script>
+</body>
+</html>

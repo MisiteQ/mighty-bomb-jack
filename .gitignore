@@ -1,0 +1,22 @@
+# ---- PC 便携版运行时与用户数据（随 Release 包分发，不入库）----
+bombjack-pc/runtime/
+bombjack-pc/saves/
+bombjack-pc/server.log
+bombjack-pc/server.pid
+
+# ---- 构建产物与构建工具（通过 GitHub Releases 分发）----
+*.fpk
+/fnpack.exe
+
+# ---- 本地运维脚本（含内网地址/凭据，切勿入库）----
+/ssh_run.py
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+
+# ---- 系统/编辑器杂项 ----
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/

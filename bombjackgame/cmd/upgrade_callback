@@ -1,0 +1,11 @@
+#!/bin/bash
+
+### This script is called after the user upgrades the application.
+
+# 升级后同样保证 var 目录可写（存档由 CGI 进程写入）
+if [ -n "${TRIM_PKGVAR:-}" ] && [ -d "${TRIM_PKGVAR}" ]; then
+    mkdir -p "${TRIM_PKGVAR}/saves/screenshots" 2>/dev/null
+    chmod -R a+rwX "${TRIM_PKGVAR}" 2>/dev/null
+fi
+
+exit 0

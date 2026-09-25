@@ -1,0 +1,13 @@
+#!/bin/bash
+
+### This script is called after the user installs the application.
+
+# 准备存档目录，并对运行数据目录放开读写权限：
+# 存档由 fnOS Web 服务拉起的 CGI 进程写入，其运行用户与应用用户不同，
+# 必须保证 var 目录对任意 CGI 运行用户可写
+if [ -n "${TRIM_PKGVAR:-}" ] && [ -d "${TRIM_PKGVAR}" ]; then
+    mkdir -p "${TRIM_PKGVAR}/saves/screenshots" 2>/dev/null
+    chmod -R a+rwX "${TRIM_PKGVAR}" 2>/dev/null
+fi
+
+exit 0

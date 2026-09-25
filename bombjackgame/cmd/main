@@ -1,0 +1,19 @@
+#!/bin/bash
+
+### 静态 CGI 应用：没有后台进程，始终视为“运行中”
+### ctl_stop=false 时应用中心不显示启停按钮，此脚本仅用于健康检查
+
+case "$1" in
+    start)
+        exit 0
+        ;;
+    stop)
+        exit 0
+        ;;
+    status)
+        exit 0
+        ;;
+    *)
+        exit 1
+        ;;
+esac

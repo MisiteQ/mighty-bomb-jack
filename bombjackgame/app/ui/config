@@ -1,0 +1,13 @@
+{
+    ".url": {
+        "bombjackgame.Application": {
+            "title": "炸弹杰克",
+            "icon": "images/icon_{0}.png",
+            "type": "iframe",
+            "protocol": "http",
+            "port": "",
+            "url": "/cgi/ThirdParty/bombjackgame/index.cgi/",
+            "allUsers": true
+        }
+    }
+}
