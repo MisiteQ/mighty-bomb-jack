@@ -25,10 +25,10 @@
 
 | 文件 | 适用平台 | 说明 |
 |---|---|---|
-| `bombjack-pc-v1.0.3-portable.zip` | Windows PC | 便携版，**内置 Python 运行时**，解压即用 |
-| `bombjackgame-v1.0.3.fpk` | 飞牛 fnOS | 通用包（纯 WebAssembly，x86 / ARM 通用） |
-| `bombjackgame-v1.0.3-x86.fpk` | 飞牛 fnOS (x86) | x86 专用包 |
-| `bombjackgame-v1.0.3-arm.fpk` | 飞牛 fnOS (ARM) | ARM 专用包 |
+| `bombjack-pc-v1.0.4-portable.zip` | Windows PC | 便携版，**内置 Python 运行时**，解压即用 |
+| `bombjackgame-v1.0.4.fpk` | 飞牛 fnOS | 通用包（纯 WebAssembly，x86 / ARM 通用） |
+| `bombjackgame-v1.0.4-x86.fpk` | 飞牛 fnOS (x86) | x86 专用包 |
+| `bombjackgame-v1.0.4-arm.fpk` | 飞牛 fnOS (ARM) | ARM 专用包 |
 
 > 克隆本仓库得到的是源码，**不包含** PC 版内置的便携 Python 运行时（约 12MB）；
 > 需要免安装体验的用户请直接下载上面的便携版 zip。
@@ -37,7 +37,7 @@
 
 ### Windows PC 便携版
 
-1. 解压 `bombjack-pc-v1.0.3-portable.zip`
+1. 解压 `bombjack-pc-v1.0.4-portable.zip`
 2. 双击文件夹内的 `start.bat` —— 本地服务器在后台无窗口运行，并自动打开浏览器访问 <http://127.0.0.1:9806/>
    - 优先使用包内自带的 `runtime/` 便携 Python；未携带运行时时自动回退到系统已安装的 Python
    - 重复双击 `start.bat` 不会启动第二个服务器，只会重新打开浏览器
@@ -55,7 +55,7 @@
 也可以在 fnOS 终端执行：
 
 ```bash
-appcenter-cli install-fpk bombjackgame-v1.0.3.fpk
+appcenter-cli install-fpk bombjackgame-v1.0.4.fpk
 ```
 
 ## 操作说明

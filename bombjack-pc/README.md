@@ -1,6 +1,6 @@
 # 炸弹杰克 · Mighty Bomb Jack 离线单机版
 
-Tehkan 1986 FC 游戏《Mighty Bomb Jack》的完全离线版本。
+Tecmo / Tehkan 经典游戏《Mighty Bomb Jack》（1986 街机版，1987 FC/NES 版）的完全离线版本。
 无需联网、无需安装任何东西，**把整个文件夹复制到其他 Windows 电脑上也能直接玩**。
 
 ## 怎么玩

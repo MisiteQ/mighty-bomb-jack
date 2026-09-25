@@ -1,13 +1,15 @@
 appname               = bombjackgame
-version               = 1.0.3
+version               = 1.0.4
 display_name          = 炸弹杰克
-desc                  = Tehkan 1986 经典 FC 游戏《Mighty Bomb Jack》离线版。在飞牛桌面内直接游玩，无需端口：6 槽位存档、按键设置、暂停、截图、音量调节、全屏。基于 WebAssembly 模拟核心，支持 x86 与 ARM 设备。
+desc                  = Tecmo/Tehkan 经典游戏《Mighty Bomb Jack》（1986 街机版，1987 FC/NES 版）离线版。在飞牛桌面内直接游玩，无需端口：6 槽位存档、按键设置、暂停、截图、音量调节、全屏。基于 WebAssembly 模拟核心，支持 x86 与 ARM 设备。
 platform              = all
 source                = thirdparty
-maintainer            = bombjack
-distributor           = bombjack
+maintainer            = Misite齊 (MisiteQ)
+maintainer_url        = https://github.com/MisiteQ
+distributor           = Misite齊 (MisiteQ)
+distributor_url       = https://github.com/MisiteQ
 os_min_version        = 0.9.0
 checkport             = false
 desktop_uidir         = ui
 desktop_applaunchname = bombjackgame.Application
-changelog             = 修复安装后桌面无图标/点击无反应：去除 ctl_stop=false 使应用可正常启动并注册桌面入口；入口端口留空（无端口 CGI 方案）
+changelog             = 修正开发者/发布者署名：maintainer、distributor 更正为离线包装发布者 Misite齊（MisiteQ），游戏权利方标注为 Tecmo/Tehkan（1986 街机版，1987 FC/NES 版）
